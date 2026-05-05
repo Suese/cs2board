@@ -52,6 +52,12 @@
         <input id="shareLink" type="text" readonly title="Shareable link" />
         <button id="copyLinkBtn">Copy</button>
       </div>
+      <div id="cropRow" class="floating-row" hidden>
+        <label>x<input type="number" id="cx" value="5" /></label>
+        <label>y<input type="number" id="cy" value="5" /></label>
+        <label>w<input type="number" id="cw" value="291" /></label>
+        <label>h<input type="number" id="ch" value="291" /></label>
+      </div>
     </div>
   </div>
 
@@ -83,12 +89,6 @@
     <div id="cropPreview">
       <video id="srcVideo" autoplay playsinline muted></video>
       <canvas id="cropCanvas"></canvas>
-    </div>
-    <div class="row">
-      <label>x <input type="number" id="cx" value="0" /></label>
-      <label>y <input type="number" id="cy" value="0" /></label>
-      <label>w <input type="number" id="cw" value="512" /></label>
-      <label>h <input type="number" id="ch" value="512" /></label>
     </div>
     <div class="row">
       <button id="confirmBroadcast" type="button">Start broadcasting</button>

@@ -33,6 +33,7 @@ const els = {
   ch:         document.getElementById("ch"),
   confirmBroadcast: document.getElementById("confirmBroadcast"),
   cancelBroadcast:  document.getElementById("cancelBroadcast"),
+  cropRow:          document.getElementById("cropRow"),
   hostHint:   document.getElementById("hostHint"),
   labels:        document.getElementById("labels"),
   glossary:      document.getElementById("glossary"),
@@ -740,7 +741,7 @@ els.copyLinkBtn.addEventListener("click", async () => {
  * -------------------------------------------------------------------------- */
 const broadcaster = {
   sourceStream: null,
-  rect: { x: 0, y: 0, w: 512, h: 512 },
+  rect: { x: 5, y: 5, w: 291, h: 291 },
   intrinsic: { w: 0, h: 0 },          // native resolution of source video
   outCanvas: null,
   outCtx: null,
@@ -837,7 +838,9 @@ els.cropCanvas.addEventListener("pointermove", e => {
 els.cropCanvas.addEventListener("pointerup", () => { dragStart = null; });
 
 for (const [el, key] of [[els.cx, "x"], [els.cy, "y"], [els.cw, "w"], [els.ch, "h"]]) {
-  el.addEventListener("input", () => {
+  // change (not input) — fires on blur/Enter so the user can finish typing
+  // a value like "291" without each digit being clamped mid-keystroke.
+  el.addEventListener("change", () => {
     setRect({ ...broadcaster.rect, [key]: parseInt(el.value, 10) || 0 });
   });
 }
@@ -865,8 +868,8 @@ async function openBroadcastDialog() {
   els.srcVideo.srcObject = stream;
   await new Promise(r => els.srcVideo.addEventListener("loadedmetadata", r, { once: true }));
   broadcaster.intrinsic = { w: els.srcVideo.videoWidth, h: els.srcVideo.videoHeight };
-  // Default: full screen.
-  setRect({ x: 0, y: 0, w: broadcaster.intrinsic.w, h: broadcaster.intrinsic.h });
+  // Default crop region — small offset + 291×291 fits a typical CS2 radar.
+  setRect({ x: 5, y: 5, w: 291, h: 291 });
   els.hostHint.textContent =
     `Source: ${broadcaster.intrinsic.w}×${broadcaster.intrinsic.h}` +
     (net.peer && net.peer.id ? ` · room id: ${net.peer.id}` : "");
@@ -929,6 +932,7 @@ els.confirmBroadcast.addEventListener("click", () => {
     v.call = net.peer.call(peerId, net.outgoingStream);
   }
   setStatus(`hosting · broadcasting · ${net.peer.id}`, "hosting");
+  els.cropRow.hidden = false;
   els.hostDialog.close();
 });
 
