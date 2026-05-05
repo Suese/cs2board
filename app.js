@@ -907,6 +907,7 @@ els.confirmBroadcast.addEventListener("click", () => {
   // Show the cropped feed on our own board too — viewers get it via the
   // peer.call below, but the host needs srcObject set explicitly.
   els.video.srcObject = net.outgoingStream;
+  els.video.play().catch(() => {});
   // Replace any existing outgoing video track on each viewer call.
   for (const [peerId, v] of net.viewers.entries()) {
     if (v.call) v.call.close();
