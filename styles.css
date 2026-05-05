@@ -1,0 +1,415 @@
+:root {
+  --tb-h: 48px;
+  --bg: #0e0e10;
+  --fg: #e8e8e8;
+  --accent: #ff5050;
+  --panel: #1a1a1d;
+  --panel-2: #26262a;
+  --border: #333;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+body { display: flex; flex-direction: column; }
+
+/* Accordion wrapper for everything below the notice — border + stage. */
+#appWrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Single top toolbar; board fills the rest. Map is left-justified. */
+#topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--tb-h);
+  background: rgba(20,20,22,0.92);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  z-index: 10;
+}
+
+#topbar select,
+#topbar input,
+#topbar button {
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+#topbar button { cursor: pointer; }
+#topbar button:hover { background: var(--panel-2); }
+#topbar input[type="text"] { font-family: ui-monospace, monospace; }
+#topbar input#noticeInput { width: 220px; }
+#topbar .sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  margin: 6px 4px;
+}
+.spacer { flex: 1; }
+
+#board {
+  position: absolute;
+  top: var(--tb-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+#mapImg, #overlayVideo, #surface {
+  position: absolute;
+  pointer-events: none;
+}
+#mapImg     { z-index: 1; image-rendering: auto; }
+#overlayVideo { z-index: 2; mix-blend-mode: screen; opacity: 0.6; pointer-events: none; }
+#surface    { z-index: 3; pointer-events: auto; cursor: default; }
+#surface.tool-pin,
+#surface.tool-draw { cursor: crosshair; }
+
+/* --- Toolbar tool buttons (prefixed with #topbar so .active beats the
+ * generic #topbar button rule on specificity) -------------------------- */
+#topbar .tool {
+  height: 36px;
+  min-width: 56px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  padding: 0 10px;
+}
+#topbar .tool:hover  { background: var(--panel-2); }
+#topbar .tool.active { background: var(--accent); border-color: var(--accent); color: #000; }
+
+/* --- Status pill ----------------------------------------------------- */
+.status {
+  font-size: 12px;
+  color: #aaa;
+  font-family: ui-monospace, monospace;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.status.connected { color: #6f6; border-color: #383; }
+.status.hosting   { color: #fc6; border-color: #aa5; }
+
+/* --- Notice combobox (text input + colour-coded suggestions) -------- */
+#noticeBox { position: relative; }
+#noticeOptions {
+  list-style: none;
+  margin: 2px 0 0 0;
+  padding: 4px 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  z-index: 30;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+#noticeOptions li {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+#noticeOptions li:hover { background: var(--panel-2); }
+#noticeOptions .slash-black {
+  background: #fff;
+  color: #000;
+  padding: 0 4px;
+  border-radius: 2px;
+  font-size: 11px;
+}
+
+/* --- Notice banner: accordion-style. The element lives in normal flow at
+ * the top of the body and animates its max-height from 0 → full, pushing
+ * #appWrap (border + UI) down underneath it. */
+#notice {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--notice-bg, #000);
+  color: var(--notice-fg, #fff);
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  max-height: 0;
+  padding: 0 28px;
+  transition: max-height 0.35s ease, padding 0.35s ease;
+  z-index: 1;
+}
+body.notice-on #notice {
+  max-height: 200px;
+  padding: 14px 28px;
+  border-bottom: 1px solid #000;
+}
+#noticeText {
+  text-shadow:
+    -2px -2px 0 var(--notice-outline, #000),
+     2px -2px 0 var(--notice-outline, #000),
+    -2px  2px 0 var(--notice-outline, #000),
+     2px  2px 0 var(--notice-outline, #000),
+     0 -2px 0 var(--notice-outline, #000),
+     0  2px 0 var(--notice-outline, #000),
+    -2px 0 0 var(--notice-outline, #000),
+     2px 0 0 var(--notice-outline, #000);
+}
+#noticeClose {
+  background: transparent;
+  color: inherit;
+  border: none;
+  font-size: 28px;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 6px;
+  text-shadow: 0 0 4px rgba(0,0,0,0.6);
+}
+
+/* --- 10-px dashed border around the app (lives inside #appWrap so it
+ * sits below the accordion notice rather than overlapping it). */
+#noticeBorder {
+  display: none;
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 10px dashed var(--notice-bg, #ff0000);
+  pointer-events: none;
+  z-index: 99;
+}
+body.notice-on #noticeBorder { display: block; }
+
+/* --- Markers --------------------------------------------------------- */
+.pin-dot       { fill: #ff2020; stroke: #000; stroke-width: 0.005; vector-effect: non-scaling-stroke; }
+.pin-ring-bg   { fill: none; stroke: rgba(255,255,255,0.25); stroke-width: 0.006; vector-effect: non-scaling-stroke; pointer-events: none; }
+.pin-ring-fg   { fill: none; stroke: #ffaa00; stroke-width: 0.006; vector-effect: non-scaling-stroke; pointer-events: none; }
+.pin-radius    { fill: #ff2828; stroke: #ff4040; stroke-width: 0.003; vector-effect: non-scaling-stroke; pointer-events: none; }
+.pin-q         { fill: rgba(255,80,80,0.55); font-weight: 800; font-family: serif; text-anchor: middle; dominant-baseline: central; }
+
+.bomb-dot      { fill: #ffcc00; stroke: #000; stroke-width: 0.005; vector-effect: non-scaling-stroke; }
+.bomb-radius   { fill: #ffb400; stroke: #ffd060; stroke-width: 0.003; vector-effect: non-scaling-stroke; pointer-events: none; }
+.bomb-label    { fill: #000; font-weight: 800; font-family: system-ui, -apple-system, sans-serif; pointer-events: none; }
+
+.tag-bg        { fill: rgba(0,0,0,0.78); stroke: #ffffff; stroke-width: 0.003; vector-effect: non-scaling-stroke; }
+.tag-text      { fill: #ffffff; font-weight: 800; font-family: system-ui, -apple-system, sans-serif; pointer-events: none; }
+.marker.tag-P .tag-bg { fill: #d83030; stroke: #ffffff; }
+.marker-tag    { cursor: grab; }
+.marker-tag:active { cursor: grabbing; }
+
+.footstep-step { fill: rgba(255,255,255,0.85); stroke: #000; stroke-width: 0.0015; vector-effect: non-scaling-stroke; pointer-events: none; }
+
+.x-line        { stroke: #ff2020; stroke-width: 0.008; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+
+/* --- Per-map labels -------------------------------------------------- */
+.label-box        { fill: transparent; stroke: none; pointer-events: auto; }
+.label-text       { fill: transparent; pointer-events: none; font-family: system-ui, sans-serif; font-weight: 600; }
+.label.hover .label-box { fill: rgba(255,255,255,0.06); stroke: rgba(255,255,255,0.7); stroke-width: 0.003; vector-effect: non-scaling-stroke; }
+
+body.dev-mode .label-box   { fill: rgba(255,80,80,0.10); stroke: #ff5050; stroke-width: 0.003; stroke-dasharray: 0.008 0.006; vector-effect: non-scaling-stroke; }
+body.dev-mode .label-text  { fill: #ffffff; paint-order: stroke; stroke: #000; stroke-width: 0.005; vector-effect: non-scaling-stroke; text-anchor: middle; dominant-baseline: central; }
+
+.label-box-preview { fill: rgba(80,180,255,0.15); stroke: #50aaff; stroke-width: 0.003; stroke-dasharray: 0.008 0.006; vector-effect: non-scaling-stroke; pointer-events: none; }
+
+/* --- Tooltip (top-centre name of hovered label) --------------------- */
+#labelTooltip {
+  position: absolute;
+  top: calc(var(--tb-h) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* --- Glossary panel (right side, in the empty space next to the map) */
+#glossary {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: 260px;
+  background: rgba(20,20,22,0.86);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  padding: 10px 12px;
+  overflow-y: auto;
+  z-index: 8;
+}
+#glossary header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+  margin-bottom: 6px;
+}
+#glossary ul { list-style: none; padding: 0; margin: 0; }
+#glossary li {
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 13px;
+}
+#glossary li:hover, #glossary li.hover { background: rgba(255,255,255,0.10); }
+
+/* --- Connector lines ------------------------------------------------- */
+#connectors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+.connector-line { stroke: rgba(255,170,0,0.42); stroke-width: 1; stroke-dasharray: 4 3; }
+.connector-line.hover { stroke: #ffaa00; stroke-width: 2; stroke-dasharray: none; }
+.connector-dot  { fill: rgba(255,170,0,0.75); }
+.connector-dot.hover { fill: #ffaa00; }
+
+/* --- Dev controls in top bar ---------------------------------------- */
+/* DEV is a regular tool toggle: same neutral look as PIN/DRAW/GLS/NET,
+ * independent of which drawing tool is active. */
+#copyLabelsBtn         { background: #2a4a2a; border-color: #3d6b3d; color: #cfe6cf; }
+#copyLabelsBtn:hover   { background: #355c35; }
+
+/* --- Floating window (Network panel, draggable by title bar) -------- */
+.floating {
+  position: absolute;
+  top: calc(var(--tb-h) + 16px);
+  right: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  z-index: 40;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.55);
+  user-select: none;
+}
+.floating[hidden] { display: none; }
+.floating-titlebar {
+  padding: 6px 12px;
+  background: var(--panel-2);
+  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid var(--border);
+  cursor: move;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #999;
+  touch-action: none;
+}
+.floating-content {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.floating-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#shareLink {
+  flex: 1;
+  font-size: 11px !important;
+  font-family: ui-monospace, monospace;
+  min-width: 220px;
+}
+.floating-content button,
+.floating-content input,
+.floating-content select {
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.floating-content input { cursor: text; font-family: ui-monospace, monospace; flex: 1; }
+.floating-content button:hover { background: var(--panel-2); }
+
+/* --- Drawing strokes ------------------------------------------------- */
+.stroke {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+/* --- Host (broadcast) dialog ---------------------------------------- */
+#hostDialog {
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  width: min(90vw, 720px);
+}
+#hostDialog::backdrop { background: rgba(0,0,0,0.7); }
+#hostDialog h3 { margin: 0 0 6px 0; }
+#hostDialog .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+#hostDialog input[type="number"] { width: 80px; background: var(--panel-2); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; }
+#hostDialog button { background: var(--panel-2); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+#hostDialog button:hover { background: #333; }
+
+#cropPreview {
+  position: relative;
+  background: #000;
+  width: 100%;
+  height: 360px;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+#srcVideo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain;
+}
+#cropCanvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  cursor: crosshair;
+}
+#hostHint { font-size: 12px; color: #aaa; margin: 8px 0 0 0; word-break: break-all; }

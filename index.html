@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CS2 Board</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="notice">
+  <span id="noticeText"></span>
+  <button id="noticeClose" type="button" aria-label="Dismiss">×</button>
+</div>
+
+<div id="appWrap">
+<div id="noticeBorder"></div>
+<div id="stage">
+
+  <div id="topbar">
+    <button class="tool" data-tool="clear" title="Clear board">CLR</button>
+    <button class="tool" data-tool="pin"   title="Pin (double-click)">PIN</button>
+    <button class="tool" data-tool="draw"  title="Free-hand draw">DRAW</button>
+    <button class="tool" data-tool="gls"   title="Glossary (or hold ` to peek)">GLS</button>
+    <button class="tool" data-tool="dev"   id="devBtn" title="Dev mode — author per-map labels">DEV</button>
+    <select id="colorSel" title="Drawing colour"></select>
+    <button id="copyLabelsBtn" hidden title="Copy labels.js content to clipboard">Copy JSON</button>
+    <span class="sep"></span>
+    <div id="noticeBox" class="combo">
+      <input id="noticeInput" type="text" placeholder="Send notice (e.g. Push /red)…" autocomplete="off" />
+      <ul id="noticeOptions" hidden>
+        <li data-value="Clutch /red">Clutch <span style="color:#ff4040">/red</span></li>
+        <li data-value="Save /green">Save <span style="color:#3fcf3f">/green</span></li>
+        <li data-value="Don't die /purple">Don't die <span style="color:#b066ff">/purple</span></li>
+        <li data-value="Hide /black">Hide <span class="slash-black">/black</span></li>
+        <li data-value="Run /yellow">Run <span style="color:#ffe93f">/yellow</span></li>
+      </ul>
+    </div>
+    <span class="spacer"></span>
+    <select id="mapSel"></select>
+    <button class="tool" data-tool="net"   title="Network panel">NET</button>
+  </div>
+
+  <div id="netWindow" class="floating">
+    <div class="floating-titlebar">Network</div>
+    <div class="floating-content">
+      <div class="floating-row">
+        <span id="connStatus" class="status">offline</span>
+        <button id="hostBtn">Host</button>
+      </div>
+      <div id="shareRow" class="floating-row" hidden>
+        <input id="shareLink" type="text" readonly title="Shareable link" />
+        <button id="copyLinkBtn">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="board">
+    <img id="mapImg" alt="map" draggable="false" />
+    <video id="overlayVideo" autoplay playsinline muted></video>
+    <svg id="surface" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <g id="strokes"></g>
+      <g id="labels"></g>
+      <g id="pins"></g>
+    </svg>
+    <aside id="glossary" hidden>
+      <header>Glossary</header>
+      <ul></ul>
+    </aside>
+  </div>
+
+  <div id="labelTooltip" hidden></div>
+  <svg id="connectors" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <g id="connectorLines"></g>
+  </svg>
+</div>
+</div>
+
+<dialog id="hostDialog">
+  <form method="dialog">
+    <h3>Set broadcast region</h3>
+    <p>Drag a rectangle on the preview to choose what to share.</p>
+    <div id="cropPreview">
+      <video id="srcVideo" autoplay playsinline muted></video>
+      <canvas id="cropCanvas"></canvas>
+    </div>
+    <div class="row">
+      <label>x <input type="number" id="cx" value="0" /></label>
+      <label>y <input type="number" id="cy" value="0" /></label>
+      <label>w <input type="number" id="cw" value="512" /></label>
+      <label>h <input type="number" id="ch" value="512" /></label>
+    </div>
+    <div class="row">
+      <button id="confirmBroadcast" type="button">Start broadcasting</button>
+      <button id="cancelBroadcast"  type="button">Cancel</button>
+    </div>
+    <p id="hostHint"></p>
+  </form>
+</dialog>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="maps.js"></script>
+<script src="labels.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
