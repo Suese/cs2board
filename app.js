@@ -897,8 +897,10 @@ els.confirmBroadcast.addEventListener("click", () => {
   // The dialog is about to close (display:none), which would freeze the
   // <video> inside it on its last decoded frame. Relocate srcVideo to the
   // body offscreen so frames keep flowing into the canvas tick below.
-  els.srcVideo.style.cssText = "position:fixed; left:-9999px; top:0; width:1px; height:1px;";
+  // Use a non-trivial size — some browsers pause the decoder for 1×1.
+  els.srcVideo.style.cssText = "position:fixed; top:-9999px; left:0; width:640px; height:360px; pointer-events:none;";
   document.body.appendChild(els.srcVideo);
+  els.srcVideo.play().catch(() => {});
 
   const tick = () => {
     if (!broadcaster.outCanvas) return;
@@ -910,16 +912,13 @@ els.confirmBroadcast.addEventListener("click", () => {
   tick();
 
   net.outgoingStream = cv.captureStream(30);
-  // Host preview: place the cropped canvas directly on the board.
-  // Setting els.video.srcObject = canvas.captureStream() is unreliable on
-  // the producing page (Chromium often freezes the consumer at the first
-  // decoded frame even though peers receive live frames over WebRTC), so
-  // we render the canvas itself in the same slot as #overlayVideo.
-  cv.style.cssText =
-    "position:absolute; inset:0; width:100%; height:100%; " +
-    "z-index:2; mix-blend-mode:screen; opacity:0.6; pointer-events:none;";
-  els.board.appendChild(cv);
-  els.video.style.display = "none";
+  // Show the cropped feed on our own board too. Cloning the track for the
+  // host's local consumer sidesteps a Chromium bug where consuming a canvas
+  // captureStream on the same page that produced it freezes the consumer
+  // on the first decoded frame (peers, consuming over WebRTC, are fine).
+  const hostTracks = net.outgoingStream.getTracks().map(t => t.clone());
+  els.video.srcObject = new MediaStream(hostTracks);
+  els.video.play().catch(() => {});
   // Replace any existing outgoing video track on each viewer call.
   for (const [peerId, v] of net.viewers.entries()) {
     if (v.call) v.call.close();
