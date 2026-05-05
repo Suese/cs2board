@@ -390,7 +390,11 @@ function tickMarkers(now) {
         const frac = dt / PIN_TIMER_SECONDS;
         m.refs.ringFg.setAttribute("stroke-dashoffset", frac);
         m.refs.radius.setAttribute("r", rMax * frac);
-        m.refs.radius.style.opacity = String(0.75 * (1 - frac));
+        if (m.type === "pin") {
+          m.refs.radius.style.fillOpacity = String(0.25 * (1 - frac));
+        } else {
+          m.refs.radius.style.opacity = String(0.75 * (1 - frac));
+        }
       } else if (!m.expired) {
         m.expired = true;
         m.refs.ringFg.style.display = "none";
