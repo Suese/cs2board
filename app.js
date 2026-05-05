@@ -839,6 +839,14 @@ for (const [el, key] of [[els.cx, "x"], [els.cy, "y"], [els.cw, "w"], [els.ch, "
 }
 
 async function openBroadcastDialog() {
+  // If a prior broadcast moved srcVideo out of the dialog (so it kept
+  // decoding while the dialog was display:none'd), put it back so the user
+  // can see the preview again.
+  const cropPreview = document.getElementById("cropPreview");
+  if (els.srcVideo.parentElement !== cropPreview) {
+    els.srcVideo.removeAttribute("style");
+    cropPreview.insertBefore(els.srcVideo, cropPreview.firstChild);
+  }
   let stream;
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
@@ -879,6 +887,12 @@ els.confirmBroadcast.addEventListener("click", () => {
   const ctx = cv.getContext("2d");
   broadcaster.outCanvas = cv;
   broadcaster.outCtx = ctx;
+
+  // The dialog is about to close (display:none), which would freeze the
+  // <video> inside it on its last decoded frame. Relocate srcVideo to the
+  // body offscreen so frames keep flowing into the canvas tick below.
+  els.srcVideo.style.cssText = "position:fixed; left:-9999px; top:0; width:1px; height:1px;";
+  document.body.appendChild(els.srcVideo);
 
   const tick = () => {
     if (!broadcaster.outCanvas) return;
