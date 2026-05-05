@@ -386,7 +386,7 @@ function tickMarkers(now) {
         const frac = dt / PIN_TIMER_SECONDS;
         m.refs.ringFg.setAttribute("stroke-dashoffset", frac);
         m.refs.radius.setAttribute("r", rMax * frac);
-        m.refs.radius.style.opacity = String(1 - frac);
+        m.refs.radius.style.opacity = String(0.75 * (1 - frac));
       } else if (!m.expired) {
         m.expired = true;
         m.refs.ringFg.style.display = "none";
@@ -462,7 +462,7 @@ function clearAll(broadcastEvent) {
  * -------------------------------------------------------------------------- */
 els.surface.addEventListener("dblclick", e => {
   if (state.tool !== "pin") return;
-  if (e.target.closest(".marker, .label")) return;  // never place on top of one
+  if (e.target.closest(".marker")) return;  // never place on top of one
   const { x, y } = evtToFrac(e);
   placeMarker({ id: uid(), type: "pin", x, y, t0: performance.now() });
 });
