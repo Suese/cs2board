@@ -880,6 +880,12 @@ els.cancelBroadcast.addEventListener("click", () => {
 
 els.confirmBroadcast.addEventListener("click", () => {
   if (!broadcaster.sourceStream) return;
+  // Stop any prior broadcast pipeline so a re-broadcast doesn't stack
+  // canvases / rAF loops.
+  if (broadcaster.rafId) cancelAnimationFrame(broadcaster.rafId);
+  if (broadcaster.outCanvas && broadcaster.outCanvas.parentElement) {
+    broadcaster.outCanvas.remove();
+  }
   // Build a render canvas sized to the cropped region, redraw each frame.
   const cv = document.createElement("canvas");
   cv.width  = broadcaster.rect.w;
@@ -904,10 +910,16 @@ els.confirmBroadcast.addEventListener("click", () => {
   tick();
 
   net.outgoingStream = cv.captureStream(30);
-  // Show the cropped feed on our own board too — viewers get it via the
-  // peer.call below, but the host needs srcObject set explicitly.
-  els.video.srcObject = net.outgoingStream;
-  els.video.play().catch(() => {});
+  // Host preview: place the cropped canvas directly on the board.
+  // Setting els.video.srcObject = canvas.captureStream() is unreliable on
+  // the producing page (Chromium often freezes the consumer at the first
+  // decoded frame even though peers receive live frames over WebRTC), so
+  // we render the canvas itself in the same slot as #overlayVideo.
+  cv.style.cssText =
+    "position:absolute; inset:0; width:100%; height:100%; " +
+    "z-index:2; mix-blend-mode:screen; opacity:0.6; pointer-events:none;";
+  els.board.appendChild(cv);
+  els.video.style.display = "none";
   // Replace any existing outgoing video track on each viewer call.
   for (const [peerId, v] of net.viewers.entries()) {
     if (v.call) v.call.close();
