@@ -116,6 +116,7 @@ els.colorSel.hidden = true;   // shown only while DRAW is active
 
 function setMap(key) {
   state.mapKey = key;
+  els.mapSel.value = key;
   els.mapImg.src = `radar/${key}.png`;
   els.mapImg.onerror = () => {
     // Friendly placeholder if radar PNG missing.
@@ -128,7 +129,10 @@ function setMap(key) {
   document.dispatchEvent(new CustomEvent("mapchange", { detail: key }));
 }
 setMap(state.mapKey);
-els.mapSel.addEventListener("change", e => setMap(e.target.value));
+els.mapSel.addEventListener("change", e => {
+  setMap(e.target.value);
+  broadcast({ type: "map-change", mapKey: e.target.value });
+});
 els.colorSel.addEventListener("change", e => { state.color = e.target.value; });
 
 /* --------------------------------------------------------------------------
@@ -611,7 +615,9 @@ function applyMessage(msg, fromConn) {
     case "stroke-add":    addStroke(msg.stroke, true); break;
     case "clear":         clearAll(false); break;
     case "notice":        applyNotice(msg.notice); break;
+    case "map-change":    setMap(msg.mapKey); break;
     case "state-sync":
+      if (msg.mapKey) setMap(msg.mapKey);
       clearAll(false);
       for (const s of msg.strokes) addStroke(s, true);
       for (const m of msg.markers) placeMarker(m, true);
@@ -630,6 +636,7 @@ function applyMessage(msg, fromConn) {
 function snapshotState() {
   return {
     type: "state-sync",
+    mapKey:  state.mapKey,
     markers: [...state.markers.values()].map(serializeMarker),
     strokes: [...state.strokes.values()].map(s => ({ id: s.id, color: s.color, points: s.points })),
     notice:  state.notice,
